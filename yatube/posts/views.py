@@ -7,7 +7,7 @@ from .models import Post, Group
 def index(request: HttpRequest) -> HttpResponse:
     posts = Post.objects.order_by("-pub_date")[:10]
 
-    title = "Главная страница"
+    title = "Последние обновления на сайте"
 
     context = {
         "title": title,
@@ -22,7 +22,7 @@ def group_posts(request: HttpRequest, slug: str) -> HttpResponse:
 
     posts = Post.objects.filter(group=group).order_by("-pub_date")[:10]
 
-    title = f"Группа &laquo;{group.title}&raquo;"
+    title = f"Записи сообщества {group.title}"
 
     context = {
         "title": title,
