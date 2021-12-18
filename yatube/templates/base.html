@@ -22,40 +22,42 @@
   <title>{{ title }}</title>
 </head>
 <body>
-<header>
-  {% include 'includes/header.html' %}
-</header>
+  <header>
+    {% include 'includes/header.html' %}
+  </header>
 
-<main>
-  <div class="container py-5">
-    <h1 class="mb-5">{{ title }}</h1>
+  <main>
+    <div class="container py-5">
+      <h1 class="mb-5">{{ title }}</h1>
 
-    {% block content %}
-    {% for post in posts %}
-    <ul>
-      <li>
-        Автор: {{ post.author.get_full_name }}
-      </li>
-      <li>
-        Дата публикации: {{ post.pub_date|date:"d E Y" }}
-      </li>
-    </ul>
-    <p>{{ post.text }}</p>
-    {% if post.group %}
-    <a href="{% url 'posts:group_list' slug=post.group.slug %}">
-      все записи группы &laquo;{{ post.group.title }}&raquo;
-    </a>
-    {% endif %}
+      {% block content %}
+        {% for post in posts %}
+          <ul>
+            <li>
+              Автор: {{ post.author.get_full_name }}
+            </li>
+            <li>
+              Дата публикации: {{ post.pub_date|date:"d E Y" }}
+            </li>
+          </ul>
 
-    {% if not forloop.last %}
-    <hr>
-    {% endif %}
-    {% endfor %}
-    {% endblock %}
-  </div>
-</main>
+          <p>{{ post.text }}</p>
 
-<footer class="border-top text-center py-3">
-  {% include 'includes/footer.html' %}
-</footer>
+          {% if post.group %}
+            <a href="{% url 'posts:group_list' slug=post.group.slug %}">
+              все записи группы &laquo;{{ post.group.title }}&raquo;
+            </a>
+          {% endif %}
+
+          {% if not forloop.last %}
+            <hr>
+          {% endif %}
+        {% endfor %}
+      {% endblock %}
+    </div>
+  </main>
+
+  <footer class="border-top text-center py-3">
+    {% include 'includes/footer.html' %}
+  </footer>
 </body>
