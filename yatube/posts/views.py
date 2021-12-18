@@ -29,4 +29,4 @@ def group_posts(request: HttpRequest, slug: str) -> HttpResponse:
         "posts": posts,
     }
 
-    return HttpResponse(render(request, "posts/group_posts.html", context))
+    return HttpResponse(render(request, "posts/group_list.html", context))
