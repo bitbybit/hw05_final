@@ -1,5 +1,7 @@
 {% extends 'base.html' %}
 
+{% block header %}{{ title }}{% endblock %}
+
 {% block content %}
   {% for post in posts %}
     <ul>
