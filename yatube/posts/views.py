@@ -20,7 +20,7 @@ def group_posts(request: HttpRequest, slug: str) -> HttpResponse:
 
     context = {
         "title": f"Записи сообщества {group.title}",
-        "posts": group.posts.order_by("-pub_date")[:POSTS_LIMIT],
+        "posts": group.posts.order_by("-pub_date"),
     }
 
     return HttpResponse(render(request, "posts/group_list.html", context))
