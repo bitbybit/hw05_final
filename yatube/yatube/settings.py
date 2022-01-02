@@ -8,8 +8,17 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+LOGIN_URL = "users:login"
+LOGIN_REDIRECT_URL = "posts:index"
+LOGOUT_REDIRECT_URL = "posts:index"
+
+EMAIL_BACKEND = "django.core.mail.backends.filebased.EmailBackend"
+EMAIL_FILE_PATH = os.path.join(BASE_DIR, "sent_emails")
+
 INSTALLED_APPS = [
     "posts.apps.PostsConfig",
+    "users.apps.UsersConfig",
+    "core.apps.CoreConfig",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -72,7 +81,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "ru"
 
 TIME_ZONE = "UTC"
 

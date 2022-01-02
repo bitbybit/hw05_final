@@ -9,7 +9,7 @@ class Group(models.Model):
     slug = models.SlugField(max_length=255, unique=True)
     description = models.TextField()
 
-    def __str__(self) -> models.CharField:
+    def __str__(self):
         return self.title
 
 
@@ -26,3 +26,9 @@ class Post(models.Model):
         blank=True,
         null=True,
     )
+
+    def __str__(self):
+        return self.text
+
+    class Meta:
+        ordering = ["-pub_date"]
