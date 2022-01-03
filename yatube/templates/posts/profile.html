@@ -1,16 +1,15 @@
 {% extends 'base.html' %}
 
-{% block header %}{{ title }}{% endblock %}
+{% block header %}Все посты пользователя {{ author.get_full_name }}{% endblock %}
 
 {% block content %}
+  <h3 class="mb-4">Всего постов: {{ page_obj.paginator.count }}</h3>
+
   {% for post in page_obj %}
     <article>
       <ul>
         <li>
-          Автор:
-          <a href="{% url 'posts:profile' username=post.author.username %}">
-            {{ post.author.get_full_name }}
-          </a>
+          Автор: {{ post.author.get_full_name }}
         </li>
         <li>
           Дата публикации: {{ post.pub_date|date:"d E Y" }}
