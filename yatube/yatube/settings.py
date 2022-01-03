@@ -18,6 +18,7 @@ EMAIL_FILE_PATH = os.path.join(BASE_DIR, "sent_emails")
 INSTALLED_APPS = [
     "posts.apps.PostsConfig",
     "users.apps.UsersConfig",
+    "about.apps.AboutConfig",
     "core.apps.CoreConfig",
     "django.contrib.admin",
     "django.contrib.auth",
