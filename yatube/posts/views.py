@@ -1,8 +1,11 @@
 from django.http import HttpResponse, HttpRequest
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
+from django.urls import reverse_lazy
 from django.core.paginator import Paginator
 from django.contrib.auth import get_user_model
+from django.views.generic.edit import CreateView, UpdateView
 from .models import Post, Group
+from .forms import PostForm
 
 User = get_user_model()
 
@@ -33,6 +36,7 @@ def group_posts(request: HttpRequest, slug: str) -> HttpResponse:
 
     context = {
         "title": f"Записи сообщества {group}",
+        "group": group,
         "page_obj": paginator.get_page(page_number),
     }
 
@@ -65,3 +69,57 @@ def post_detail(request: HttpRequest, post_id: int) -> HttpResponse:
     }
 
     return render(request, "posts/post_detail.html", context)
+
+
+class PostCreate(CreateView):
+    form_class = PostForm
+    template_name = "posts/create_post.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["title"] = "Новый пост"
+
+        return context
+
+    def get_success_url(self):
+        return reverse_lazy(
+            "posts:profile",
+            kwargs={"username": self.request.user.username},
+        )
+
+    def form_valid(self, form):
+        self.object = form.save(commit=False)
+        self.object.author = self.request.user
+        self.object.save()
+
+        return super().form_valid(form)
+
+
+class PostUpdate(UpdateView):
+    model = Post
+    form_class = PostForm
+    template_name = "posts/create_post.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        post = Post.objects.get(id=kwargs["pk"])
+
+        if post.author.id != request.user.id:
+            return redirect(
+                "posts:post_detail",
+                post_id=post.id,
+            )
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["title"] = f"Редактировать пост #{self.object.id}"
+        context["is_edit"] = True
+
+        return context
+
+    def get_success_url(self):
+        return reverse_lazy(
+            "posts:post_update",
+            kwargs={"pk": self.object.id},
+        )

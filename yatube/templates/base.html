@@ -46,7 +46,7 @@
             </li>
             {% if user.is_authenticated %}
               <li class="nav-item">
-                <a class="nav-link" href="{# TODO: add post #}">
+                <a class="nav-link{% if view_name  == 'posts:post_create' %} active{% endif %}" href="{% url 'posts:post_create' %}">
                   Новая запись
                 </a>
               </li>
@@ -83,9 +83,7 @@
 
   <main>
     <div class="container py-5">
-      <h1 class="mb-5">
-        {% block header %}{% endblock %}
-      </h1>
+      <h1>{% block header %}{% endblock %}</h1>
 
       {% block content %}{% endblock %}
     </div>
