@@ -42,18 +42,20 @@ class URLTests(TestCase):
     urls_dict = {
         "guest": {
             HTTPStatus.OK: URLS_GUEST_ALLOWED,
-            HTTPStatus.FOUND: URLS_AUTHOR_ALLOWED | URLS_USER_ALLOWED,
+            HTTPStatus.FOUND: {**URLS_AUTHOR_ALLOWED, **URLS_USER_ALLOWED},
             HTTPStatus.NOT_FOUND: URLS_NOT_EXISTING,
         },
         "user": {
-            HTTPStatus.OK: URLS_USER_ALLOWED | URLS_GUEST_ALLOWED,
+            HTTPStatus.OK: {**URLS_USER_ALLOWED, **URLS_GUEST_ALLOWED},
             HTTPStatus.FOUND: URLS_AUTHOR_ALLOWED,
             HTTPStatus.NOT_FOUND: URLS_NOT_EXISTING,
         },
         "author": {
-            HTTPStatus.OK: URLS_AUTHOR_ALLOWED
-            | URLS_USER_ALLOWED
-            | URLS_GUEST_ALLOWED,
+            HTTPStatus.OK: {
+                **URLS_AUTHOR_ALLOWED,
+                **URLS_USER_ALLOWED,
+                **URLS_GUEST_ALLOWED,
+            },
             HTTPStatus.NOT_FOUND: URLS_NOT_EXISTING,
         },
     }
