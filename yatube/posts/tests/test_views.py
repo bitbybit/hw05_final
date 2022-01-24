@@ -2,7 +2,10 @@ from django.test import TestCase, Client
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.urls import reverse
+from django.http import HttpResponse
+from django.db import models
 from django import forms
+from typing import Union, Dict, Callable
 from ..models import Post, Group
 
 User = get_user_model()
@@ -147,6 +150,89 @@ class ViewTests(TestCase):
             },
         }
 
+    def context_pagination_checks(
+        self,
+        path_name: str,
+        response: HttpResponse,
+        checks: Dict[
+            str,
+            Union[
+                Dict[int, int], models.Model, Callable[[models.Model], bool]
+            ],
+        ],
+    ):
+        context_key = "page_obj"
+        context_value = checks
+
+        items_page_first = response.context.get(context_key)
+        items_page_first_count = len(items_page_first)
+        items_page_first_count_expected = context_value["pages"][1]
+
+        with self.subTest(f"{path_name} page 1 items count"):
+            self.assertEqual(
+                items_page_first_count,
+                items_page_first_count_expected,
+            )
+
+        if "item_criteria" in context_value:
+            with self.subTest(f"{path_name} page 1 items criteria"):
+                for item in items_page_first:
+                    self.assertTrue(context_value["item_criteria"](item))
+
+        for (
+            page_number,
+            items_page_n_count_expected,
+        ) in context_value["pages"].items():
+            if page_number != 1:
+                response_page_n = ViewTests.client.get(
+                    f"{path_name}?page={page_number}"
+                )
+                items_page_n = response_page_n.context.get(context_key)
+                items_page_n_count = len(items_page_n)
+
+                with self.subTest(
+                    f"{path_name} page {page_number} items count"
+                ):
+                    self.assertEqual(
+                        items_page_n_count,
+                        items_page_n_count_expected,
+                    )
+
+                if "item_criteria" in context_value:
+                    with self.subTest(
+                        f"{path_name} page {page_number} " f"items criteria"
+                    ):
+                        for item in items_page_n:
+                            self.assertTrue(
+                                context_value["item_criteria"](item)
+                            )
+
+        with self.subTest(f"{path_name} pagination item type"):
+            item = response.context.get(context_key).object_list[0]
+            item_type_expected = context_value["type"]
+
+            self.assertIsInstance(item, item_type_expected)
+
+    def context_form_checks(
+        self,
+        path_name: str,
+        response: HttpResponse,
+        form_fields: Dict[str, forms.fields.Field],
+    ):
+        for (
+            form_field_key,
+            form_field_expected,
+        ) in form_fields.items():
+            with self.subTest(f"{path_name} form {form_field_key}"):
+                form_field = response.context.get("form").fields.get(
+                    form_field_key
+                )
+
+                self.assertIsInstance(
+                    form_field,
+                    form_field_expected,
+                )
+
     def test_template_and_context(self):
         """
         Соответствие имен `urlpatterns` ожидаемым шаблонам и их содержимому.
@@ -168,80 +254,14 @@ class ViewTests(TestCase):
 
             for context_key, context_value in view_expected["context"].items():
                 if context_key == "page_obj":
-                    items_page_first = response.context.get(context_key)
-                    items_page_first_count = len(items_page_first)
-                    items_page_first_count_expected = context_value["pages"][1]
-
-                    with self.subTest(f"{path_name} page 1 items count"):
-                        self.assertEqual(
-                            items_page_first_count,
-                            items_page_first_count_expected,
-                        )
-
-                    if "item_criteria" in context_value:
-                        with self.subTest(
-                            f"{path_name} page 1 items criteria"
-                        ):
-                            for item in items_page_first:
-                                self.assertTrue(
-                                    context_value["item_criteria"](item)
-                                )
-
-                    for (
-                        page_number,
-                        items_page_n_count_expected,
-                    ) in context_value["pages"].items():
-                        if page_number != 1:
-                            response_page_n = ViewTests.client.get(
-                                f"{path_name}?page={page_number}"
-                            )
-                            items_page_n = response_page_n.context.get(
-                                context_key
-                            )
-                            items_page_n_count = len(items_page_n)
-
-                            with self.subTest(
-                                f"{path_name} page {page_number} items count"
-                            ):
-                                self.assertEqual(
-                                    items_page_n_count,
-                                    items_page_n_count_expected,
-                                )
-
-                            if "item_criteria" in context_value:
-                                with self.subTest(
-                                    f"{path_name} page {page_number} "
-                                    f"items criteria"
-                                ):
-                                    for item in items_page_n:
-                                        self.assertTrue(
-                                            context_value["item_criteria"](
-                                                item
-                                            )
-                                        )
-
-                    with self.subTest(f"{path_name} pagination item type"):
-                        item = response.context.get(context_key).object_list[0]
-                        item_type_expected = context_value["type"]
-
-                        self.assertIsInstance(item, item_type_expected)
+                    self.context_pagination_checks(
+                        path_name, response, context_value
+                    )
 
                 elif context_key == "form":
-                    for (
-                        form_field_key,
-                        form_field_expected,
-                    ) in context_value.items():
-                        with self.subTest(
-                            f"{path_name} form {form_field_key}"
-                        ):
-                            form_field = response.context.get(
-                                "form"
-                            ).fields.get(form_field_key)
-
-                            self.assertIsInstance(
-                                form_field,
-                                form_field_expected,
-                            )
+                    self.context_form_checks(
+                        path_name, response, context_value
+                    )
 
                 else:
                     with self.subTest(f"{path_name} context {context_key}"):
