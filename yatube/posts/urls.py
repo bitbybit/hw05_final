@@ -17,7 +17,7 @@ urlpatterns = [
     ),
     path(
         "posts/<int:pk>/edit/",
-        login_required(views.PostUpdate.as_view()),
+        views.PostUpdate.as_view(),
         name="post_update",
     ),
 ]
