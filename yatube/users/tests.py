@@ -48,9 +48,8 @@ class URLTests(PostsURLTests):
         },
     }
 
-    @classmethod
-    def setUpTestData(cls):
-        cls.guest_client = Client()
+    def setUp(self):
+        self.guest_client = Client()
 
 
 class ViewTests(PostsViewTests):
@@ -92,17 +91,19 @@ class ViewTests(PostsViewTests):
     }
 
     @classmethod
-    def setUpTestData(cls):
-        cls.client = Client()
+    def setUpClass(cls):
+        TestCase.setUpClass()
+
+    def setUp(self):
+        self.client = Client()
 
     def test_entities_creation(self):
         pass
 
 
 class FormTests(TestCase):
-    @classmethod
-    def setUpTestData(cls):
-        cls.client = Client()
+    def setUp(self):
+        self.client = Client()
 
     def test_entities_creation(self):
         """
@@ -110,7 +111,7 @@ class FormTests(TestCase):
         """
         user_count = User.objects.count()
 
-        response = FormTests.client.post(
+        response = self.client.post(
             reverse(f"{APP_NAME}:signup"),
             data={
                 "username": "test",

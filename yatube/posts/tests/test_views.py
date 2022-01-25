@@ -1,14 +1,11 @@
 from django.test import TestCase, Client
-from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.urls import reverse
 from django.http import HttpResponse
 from django.db import models
 from django import forms
 from typing import Union, Dict, Callable
-from ..models import Post, Group
-
-User = get_user_model()
+from ..models import Post, Group, User
 
 APP_NAME = "posts"
 
@@ -23,7 +20,9 @@ POST_TITLE_LENGTH_LIMIT = 30
 
 class ViewTests(TestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
+
         cls.user = User.objects.create(username="test")
 
         cls.group = Group.objects.create(title="Название", slug="test")
@@ -43,10 +42,11 @@ class ViewTests(TestCase):
         cls.posts = posts
         cls.post = posts[0]
 
-        cls.client = Client()
-        cls.client.force_login(cls.user)
-
         cls.set_views_dict(cls)
+
+    def setUp(self):
+        self.client = Client()
+        self.client.force_login(ViewTests.user)
 
     def set_views_dict(self):
         """
@@ -184,7 +184,7 @@ class ViewTests(TestCase):
             items_page_n_count_expected,
         ) in context_value["pages"].items():
             if page_number != 1:
-                response_page_n = ViewTests.client.get(
+                response_page_n = self.client.get(
                     f"{path_name}?page={page_number}"
                 )
                 items_page_n = response_page_n.context.get(context_key)
@@ -244,7 +244,7 @@ class ViewTests(TestCase):
         - контекстным переменным из `views_dict`
         """
         for path_name, view_expected in self.views_dict.items():
-            response = ViewTests.client.get(path_name)
+            response = self.client.get(path_name)
 
             with self.subTest(f"{path_name} {view_expected['template']}"):
                 self.assertTemplateUsed(response, view_expected["template"])
@@ -281,13 +281,13 @@ class ViewTests(TestCase):
         """
         last_post = ViewTests.posts[-1]
 
-        response_index = ViewTests.client.get(reverse(f"{APP_NAME}:index"))
+        response_index = self.client.get(reverse(f"{APP_NAME}:index"))
         items_index = response_index.context.get("page_obj")
 
         with self.subTest("Пост на главной странице"):
             self.assertIn(last_post, items_index)
 
-        response_group = ViewTests.client.get(
+        response_group = self.client.get(
             reverse(f"{APP_NAME}:group_list", kwargs={"slug": "test"})
         )
         items_group = response_group.context.get("page_obj")
@@ -295,7 +295,7 @@ class ViewTests(TestCase):
         with self.subTest("Пост в своей группе"):
             self.assertIn(last_post, items_group)
 
-        response_profile = ViewTests.client.get(
+        response_profile = self.client.get(
             reverse(
                 f"{APP_NAME}:profile",
                 kwargs={"username": last_post.author.username},
@@ -306,7 +306,7 @@ class ViewTests(TestCase):
         with self.subTest("Пост в профиле автора"):
             self.assertIn(last_post, items_profile)
 
-        response_group_another = ViewTests.client.get(
+        response_group_another = self.client.get(
             reverse(f"{APP_NAME}:group_list", kwargs={"slug": "test-another"})
         )
         items_group_another = response_group_another.context.get("page_obj")

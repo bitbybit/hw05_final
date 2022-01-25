@@ -1,17 +1,15 @@
 from django.test import TestCase, Client
-from django.contrib.auth import get_user_model
 from django.urls import reverse
 from http import HTTPStatus
-from ..models import Post
-
-User = get_user_model()
+from ..models import Post, User
 
 APP_NAME = "posts"
 
 
 class FormTests(TestCase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
         cls.user = User.objects.create(username="test")
 
         cls.post = Post.objects.create(
@@ -19,8 +17,9 @@ class FormTests(TestCase):
             author=cls.user,
         )
 
-        cls.client = Client()
-        cls.client.force_login(cls.user)
+    def setUp(self):
+        self.client = Client()
+        self.client.force_login(FormTests.user)
 
     def test_entities_creation(self):
         """
@@ -28,7 +27,7 @@ class FormTests(TestCase):
         """
         post_count = Post.objects.count()
 
-        response = FormTests.client.post(
+        response = self.client.post(
             reverse(f"{APP_NAME}:post_create"),
             data={
                 "text": "Текст",
@@ -46,7 +45,7 @@ class FormTests(TestCase):
         """
         text_new = "Текст измененный"
 
-        response = FormTests.client.post(
+        response = self.client.post(
             reverse(
                 f"{APP_NAME}:post_update", kwargs={"pk": FormTests.post.id}
             ),

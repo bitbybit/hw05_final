@@ -1,9 +1,6 @@
 from django.test import TestCase, Client
-from django.contrib.auth import get_user_model
 from http import HTTPStatus
-from ..models import Post, Group
-
-User = get_user_model()
+from ..models import Post, Group, User
 
 URLS_GUEST_ALLOWED = {
     "/": {
@@ -61,7 +58,9 @@ class URLTests(TestCase):
     }
 
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
+
         cls.author = User.objects.create(username="test_author")
         cls.group = Group.objects.create(title="Название", slug="test")
         cls.post = Post.objects.create(
@@ -72,13 +71,14 @@ class URLTests(TestCase):
 
         cls.user = User.objects.create(username="test")
 
-        cls.guest_client = Client()
+    def setUp(self):
+        self.guest_client = Client()
 
-        cls.user_client = Client()
-        cls.user_client.force_login(cls.user)
+        self.user_client = Client()
+        self.user_client.force_login(URLTests.user)
 
-        cls.author_client = Client()
-        cls.author_client.force_login(cls.author)
+        self.author_client = Client()
+        self.author_client.force_login(URLTests.author)
 
     @staticmethod
     def get_url_redirect_default(url: str) -> str:
@@ -100,7 +100,7 @@ class URLTests(TestCase):
                 is_ok = http_code_expected == HTTPStatus.OK
 
                 for url, value_expected in urls_data.items():
-                    response = getattr(URLTests, f"{user_type}_client").get(
+                    response = getattr(self, f"{user_type}_client").get(
                         url, follow=is_redirect
                     )
 

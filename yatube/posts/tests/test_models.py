@@ -1,8 +1,5 @@
 from django.test import TestCase
-from django.contrib.auth import get_user_model
-from ..models import Post, Group
-
-User = get_user_model()
+from ..models import Post, Group, User
 
 FIELDS_POST = {
     "text": {
@@ -42,7 +39,9 @@ class ModelTests(TestCase):
     }
 
     @classmethod
-    def setUpTestData(cls):
+    def setUpClass(cls):
+        super().setUpClass()
+
         cls.user = User.objects.create(username="test")
 
         cls.group = Group.objects.create(title="Название", slug="test")

@@ -1,6 +1,6 @@
 from posts.tests.test_urls import URLTests as PostsURLTests
 from posts.tests.test_views import ViewTests as PostsViewTests
-from django.test import Client
+from django.test import TestCase, Client
 from django.urls import reverse
 from http import HTTPStatus
 
@@ -21,9 +21,8 @@ class URLTests(PostsURLTests):
         }
     }
 
-    @classmethod
-    def setUpTestData(cls):
-        cls.guest_client = Client()
+    def setUp(self):
+        self.guest_client = Client()
 
 
 class ViewTests(PostsViewTests):
@@ -37,8 +36,11 @@ class ViewTests(PostsViewTests):
     }
 
     @classmethod
-    def setUpTestData(cls):
-        cls.client = Client()
+    def setUpClass(cls):
+        TestCase.setUpClass()
+
+    def setUp(self):
+        self.client = Client()
 
     def test_entities_creation(self):
         pass
