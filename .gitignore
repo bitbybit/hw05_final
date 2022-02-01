@@ -146,3 +146,4 @@ dmypy.json
 .mypy_cache
 
 sent_emails
+media

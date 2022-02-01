@@ -1,13 +1,19 @@
-from django.test import TestCase, Client
+import shutil
+import tempfile
+from django.test import TestCase, Client, override_settings
 from django.utils import timezone
 from django.urls import reverse
 from django.http import HttpResponse
 from django.db import models
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.conf import settings
 from django import forms
 from typing import Union, Dict, Callable
 from ..models import Post, Group, User
 
 APP_NAME = "posts"
+
+TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
 FORM_FIELDS_POST = {
     "text": forms.fields.CharField,
@@ -18,6 +24,7 @@ POSTS_LIMIT = 10
 POST_TITLE_LENGTH_LIMIT = 30
 
 
+@override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
 class ViewTests(TestCase):
     @classmethod
     def setUpClass(cls):
@@ -30,11 +37,25 @@ class ViewTests(TestCase):
             title="Название другой группы", slug="test-another"
         )
 
+        small_gif = (
+            b"\x47\x49\x46\x38\x39\x61\x02\x00"
+            b"\x01\x00\x80\x00\x00\x00\x00\x00"
+            b"\xFF\xFF\xFF\x21\xF9\x04\x00\x00"
+            b"\x00\x00\x00\x2C\x00\x00\x00\x00"
+            b"\x02\x00\x01\x00\x00\x02\x02\x0C"
+            b"\x0A\x00\x3B"
+        )
+
+        image = SimpleUploadedFile(
+            name="small.gif", content=small_gif, content_type="image/gif"
+        )
+
         posts = []
         for i in range(POSTS_LIMIT + 5):
             posts.append(
                 Post.objects.create(
                     text="Текст",
+                    image=image,
                     group=cls.group,
                     author=cls.user,
                 )
@@ -43,6 +64,11 @@ class ViewTests(TestCase):
         cls.post = posts[0]
 
         cls.set_views_dict(cls)
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
 
     def setUp(self):
         self.client = Client()
@@ -313,3 +339,14 @@ class ViewTests(TestCase):
 
         with self.subTest("Пост в не связанной группе"):
             self.assertNotIn(last_post, items_group_another)
+
+        response_detail = self.client.get(
+            reverse(
+                f"{APP_NAME}:post_detail",
+                kwargs={"post_id": last_post.id},
+            )
+        )
+        item_detail = response_detail.context.get("post")
+
+        with self.subTest("Пост на детальной странице"):
+            self.assertEqual(last_post, item_detail)
