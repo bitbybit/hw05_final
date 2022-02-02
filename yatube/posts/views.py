@@ -1,15 +1,17 @@
-from django.http import HttpResponse, HttpRequest
-from django.shortcuts import render, get_object_or_404, redirect
-from django.urls import reverse_lazy
-from django.core.paginator import Paginator
 from django.contrib.auth import get_user_model
+from django.core.paginator import Paginator
+from django.http import HttpRequest, HttpResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse_lazy
 from django.views.generic.edit import CreateView, UpdateView
-from .models import Post, Group
-from .forms import PostForm
+
+from .forms import CommentForm, PostForm
+from .models import Group, Post
 
 User = get_user_model()
 
 POSTS_LIMIT = 10
+COMMENTS_LIMIT = 10
 POST_TITLE_LENGTH_LIMIT = 30
 
 
@@ -60,15 +62,44 @@ def profile(request: HttpRequest, username: str) -> HttpResponse:
     return render(request, "posts/profile.html", context)
 
 
-def post_detail(request: HttpRequest, post_id: int) -> HttpResponse:
-    post = get_object_or_404(Post, pk=post_id)
+class PostDetail(CreateView):
+    form_class = CommentForm
+    template_name = "posts/post_detail.html"
+    post_object = None
 
-    context = {
-        "title": f"Пост {post.text[:POST_TITLE_LENGTH_LIMIT]}",
-        "post": post,
-    }
+    def dispatch(self, request: HttpRequest, *args, **kwargs):
+        self.post_object = get_object_or_404(Post, pk=kwargs["pk"])
 
-    return render(request, "posts/post_detail.html", context)
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        comments = self.post_object.comments.all()
+
+        paginator = Paginator(comments, COMMENTS_LIMIT)
+        page_number = self.request.GET.get("page")
+
+        context = super().get_context_data(**kwargs)
+        context["title"] = (
+            f"Пост {self.post_object.text[:POST_TITLE_LENGTH_LIMIT]}",
+        )
+        context["post"] = self.post_object
+        context["page_obj"] = paginator.get_page(page_number)
+
+        return context
+
+    def get_success_url(self):
+        return reverse_lazy(
+            "posts:post_detail",
+            kwargs={"pk": self.post_object.id},
+        )
+
+    def form_valid(self, form: CommentForm):
+        self.object = form.save(commit=False)
+        self.object.author = self.request.user
+        self.object.post = self.post_object
+        self.object.save()
+
+        return super().form_valid(form)
 
 
 class PostCreate(CreateView):
@@ -87,7 +118,7 @@ class PostCreate(CreateView):
             kwargs={"username": self.request.user.username},
         )
 
-    def form_valid(self, form):
+    def form_valid(self, form: PostForm):
         self.object = form.save(commit=False)
         self.object.author = self.request.user
         self.object.save()
@@ -100,13 +131,13 @@ class PostUpdate(UpdateView):
     form_class = PostForm
     template_name = "posts/create_post.html"
 
-    def dispatch(self, request, *args, **kwargs):
-        post = Post.objects.get(id=kwargs["pk"])
+    def dispatch(self, request: HttpRequest, *args, **kwargs):
+        post = get_object_or_404(Post, pk=kwargs["pk"])
 
         if post.author.id != request.user.id:
             return redirect(
                 "posts:post_detail",
-                post_id=post.id,
+                pk=post.id,
             )
 
         return super().dispatch(request, *args, **kwargs)

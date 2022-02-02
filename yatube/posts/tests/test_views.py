@@ -148,7 +148,7 @@ class ViewTests(TestCase):
             },
             reverse(
                 f"{APP_NAME}:post_detail",
-                kwargs={"post_id": ViewTests.post.id},
+                kwargs={"pk": ViewTests.post.id},
             ): {
                 "template": "posts/post_detail.html",
                 "context": {
@@ -343,7 +343,7 @@ class ViewTests(TestCase):
         response_detail = self.client.get(
             reverse(
                 f"{APP_NAME}:post_detail",
-                kwargs={"post_id": last_post.id},
+                kwargs={"pk": last_post.id},
             )
         )
         item_detail = response_detail.context.get("post")

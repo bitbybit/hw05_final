@@ -1,5 +1,5 @@
-from django.urls import path
 from django.contrib.auth.decorators import login_required
+from django.urls import path
 
 from . import views
 
@@ -9,7 +9,7 @@ urlpatterns = [
     path("group/<slug:slug>/", views.group_posts, name="group_list"),
     path("", views.index, name="index"),
     path("profile/<str:username>/", views.profile, name="profile"),
-    path("posts/<int:post_id>/", views.post_detail, name="post_detail"),
+    path("posts/<int:pk>/", views.PostDetail.as_view(), name="post_detail"),
     path(
         "create/",
         login_required(views.PostCreate.as_view()),
@@ -19,5 +19,10 @@ urlpatterns = [
         "posts/<int:pk>/edit/",
         views.PostUpdate.as_view(),
         name="post_update",
+    ),
+    path(
+        "posts/<int:pk>/comment/",
+        login_required(views.PostDetail.as_view()),
+        name="add_comment",
     ),
 ]

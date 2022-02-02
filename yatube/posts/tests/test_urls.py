@@ -1,6 +1,8 @@
-from django.test import TestCase, Client
 from http import HTTPStatus
-from ..models import Post, Group, User
+
+from django.test import Client, TestCase
+
+from ..models import Group, Post, User
 
 URLS_GUEST_ALLOWED = {
     "/": {

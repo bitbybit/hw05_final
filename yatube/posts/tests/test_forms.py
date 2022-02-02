@@ -1,10 +1,12 @@
 import shutil
 import tempfile
-from django.test import TestCase, Client, override_settings
-from django.urls import reverse
-from django.core.files.uploadedfile import SimpleUploadedFile
-from django.conf import settings
 from http import HTTPStatus
+
+from django.conf import settings
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import Client, TestCase, override_settings
+from django.urls import reverse
+
 from ..models import Post, User
 
 APP_NAME = "posts"

@@ -24,7 +24,7 @@
 
       <p>{{ post.text }}</p>
 
-      <a href="{% url 'posts:post_detail' post_id=post.id %}">
+      <a href="{% url 'posts:post_detail' pk=post.id %}">
         подробная информация
       </a>
     </article>

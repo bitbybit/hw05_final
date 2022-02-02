@@ -1,0 +1,35 @@
+{% if user.is_authenticated %}
+  <div class="card my-4">
+    <h5 class="card-header">Добавить комментарий:</h5>
+
+    <div class="card-body">
+      {% include 'includes/form/errors.html' %}
+
+      <form method="post" action="{% url 'posts:add_comment' post.id %}">
+        {% include 'includes/form/fields.html' %}
+
+        <div class="d-flex justify-content-end">
+          <input type="submit" value="Отправить" class="btn btn-primary">
+        </div>
+      </form>
+    </div>
+  </div>
+{% endif %}
+
+{% for comment in page_obj %}
+  <div class="media mb-4">
+    <div class="media-body">
+      <h5 class="mt-0">
+        <a href="{% url 'posts:profile' comment.author.username %}">
+          {{ comment.author.username }}
+        </a>
+      </h5>
+
+      <p>
+        {{ comment.text }}
+      </p>
+    </div>
+  </div>
+{% endfor %}
+
+{% include 'posts/includes/paginator.html' %}
