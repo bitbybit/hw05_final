@@ -1,3 +1,4 @@
+from core.views import permission_denied
 from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
 from django.http import HttpRequest, HttpResponse
@@ -79,9 +80,9 @@ class PostDetail(CreateView):
         page_number = self.request.GET.get("page")
 
         context = super().get_context_data(**kwargs)
-        context["title"] = (
-            f"Пост {self.post_object.text[:POST_TITLE_LENGTH_LIMIT]}",
-        )
+        context[
+            "title"
+        ] = f"Пост {self.post_object.text[:POST_TITLE_LENGTH_LIMIT]}"
         context["post"] = self.post_object
         context["page_obj"] = paginator.get_page(page_number)
 
@@ -94,6 +95,9 @@ class PostDetail(CreateView):
         )
 
     def form_valid(self, form: CommentForm):
+        if not self.request.user.is_authenticated:
+            return permission_denied(self.request)
+
         self.object = form.save(commit=False)
         self.object.author = self.request.user
         self.object.post = self.post_object
