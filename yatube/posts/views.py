@@ -26,9 +26,12 @@ class Index(TemplateView):
         paginator = Paginator(posts, POSTS_LIMIT)
         page_number = self.request.GET.get("page")
 
+        cache_id = f"{page_number or 1}"
+
         context = super().get_context_data(**kwargs)
         context["title"] = "Последние обновления на сайте"
         context["page_obj"] = paginator.get_page(page_number)
+        context["cache_id"] = cache_id
 
         return context
 
@@ -43,10 +46,13 @@ class GroupPosts(TemplateView):
         paginator = Paginator(posts, POSTS_LIMIT)
         page_number = self.request.GET.get("page")
 
+        cache_id = f"{group.id}-{page_number or 1}"
+
         context = super().get_context_data(**kwargs)
         context["title"] = f"Записи сообщества {group}"
         context["group"] = group
         context["page_obj"] = paginator.get_page(page_number)
+        context["cache_id"] = cache_id
 
         return context
 
@@ -64,10 +70,13 @@ class Profile(TemplateView):
         paginator = Paginator(posts, POSTS_LIMIT)
         page_number = self.request.GET.get("page")
 
+        cache_id = f"{author.id}-{page_number or 1}"
+
         context = super().get_context_data(**kwargs)
         context["title"] = title
         context["author"] = author
         context["page_obj"] = paginator.get_page(page_number)
+        context["cache_id"] = cache_id
 
         return context
 

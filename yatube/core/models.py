@@ -6,6 +6,7 @@ class CreatedModel(models.Model):
         verbose_name="Дата создания",
         help_text="Выберите дату",
         auto_now_add=True,
+        db_index=True,
     )
 
     class Meta:
