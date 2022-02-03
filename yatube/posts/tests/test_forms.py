@@ -7,7 +7,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 
-from ..models import Post, User
+from ..models import Comment, Post, User
 
 APP_NAME = "posts"
 
@@ -35,11 +35,8 @@ class FormTests(TestCase):
         self.client = Client()
         self.client.force_login(FormTests.user)
 
-    def test_entities_creation(self):
-        """
-        Отправка валидной формы со страницы создания поста.
-        """
-        post_count = Post.objects.count()
+    def entities_creation_post(self):
+        count = Post.objects.count()
 
         text = "Текст с картинкой"
 
@@ -65,7 +62,7 @@ class FormTests(TestCase):
             follow=True,
         )
 
-        self.assertEqual(Post.objects.count(), post_count + 1)
+        self.assertEqual(Post.objects.count(), count + 1)
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
@@ -75,10 +72,35 @@ class FormTests(TestCase):
             ).exists()
         )
 
-    def test_entities_modification(self):
+    def entities_creation_comment(self):
+        count = Comment.objects.count()
+
+        text = "Комментарий"
+
+        response = self.client.post(
+            reverse(
+                f"{APP_NAME}:add_comment", kwargs={"pk": FormTests.post.id}
+            ),
+            data={
+                "text": text,
+            },
+            follow=True,
+        )
+
+        self.assertEqual(Comment.objects.count(), count + 1)
+
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+
+        self.assertTrue(Comment.objects.filter(text=text).exists())
+
+    def test_entities_creation(self):
         """
-        Отправка валидной формы со страницы редактирования поста.
+        Отправка валидной формы со страниц создания поста и комментария поста.
         """
+        self.entities_creation_post()
+        self.entities_creation_comment()
+
+    def entities_modification_post(self):
         text_new = "Текст измененный"
 
         response = self.client.post(
@@ -94,3 +116,9 @@ class FormTests(TestCase):
         self.assertEqual(Post.objects.get(pk=FormTests.post.id).text, text_new)
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
+
+    def test_entities_modification(self):
+        """
+        Отправка валидной формы со страницы редактирования поста.
+        """
+        self.entities_modification_post()

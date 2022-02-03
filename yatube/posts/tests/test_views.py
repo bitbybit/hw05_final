@@ -1,15 +1,17 @@
 import shutil
 import tempfile
-from django.test import TestCase, Client, override_settings
-from django.utils import timezone
-from django.urls import reverse
-from django.http import HttpResponse
-from django.db import models
-from django.core.files.uploadedfile import SimpleUploadedFile
-from django.conf import settings
+from typing import Callable, Dict, Union
+
 from django import forms
-from typing import Union, Dict, Callable
-from ..models import Post, Group, User
+from django.conf import settings
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.db import models
+from django.http import HttpResponse
+from django.test import Client, TestCase, override_settings
+from django.urls import reverse
+from django.utils import timezone
+
+from ..models import Comment, Group, Post, User
 
 APP_NAME = "posts"
 
@@ -19,9 +21,13 @@ FORM_FIELDS_POST = {
     "text": forms.fields.CharField,
     "group": forms.fields.ChoiceField,
 }
+FORM_FIELDS_COMMENT = {
+    "text": forms.fields.CharField,
+}
 
 POSTS_LIMIT = 10
 POST_TITLE_LENGTH_LIMIT = 30
+COMMENTS_LIMIT = 10
 
 
 @override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
@@ -62,6 +68,14 @@ class ViewTests(TestCase):
             )
         cls.posts = posts
         cls.post = posts[0]
+        cls.post_last = posts[-1]
+
+        for i in range(COMMENTS_LIMIT + 5):
+            Comment.objects.create(
+                text="Комментарий",
+                post=cls.post,
+                author=cls.user,
+            )
 
         cls.set_views_dict(cls)
 
@@ -155,6 +169,17 @@ class ViewTests(TestCase):
                     "title": f"Пост "
                     f"{ViewTests.post.text[:POST_TITLE_LENGTH_LIMIT]}",
                     "post": ViewTests.post,
+                    "form": FORM_FIELDS_COMMENT,
+                    "page_obj": {
+                        "pages": {
+                            1: COMMENTS_LIMIT,
+                            2: ViewTests.post.comments.count()
+                            - COMMENTS_LIMIT,
+                        },
+                        "type": Comment,
+                        "item_criteria": lambda item: item.post.id
+                        == ViewTests.post.id,
+                    },
                 },
             },
             reverse(f"{APP_NAME}:post_create"): {
@@ -296,57 +321,111 @@ class ViewTests(TestCase):
                             context_value,
                         )
 
-    def test_entities_creation(self):
+    def entities_creation_post_index(self):
         """
-        Проверка создания поста в группе.
-
-        Если при создании поста указать группу, то этот пост появляется
-        на главной странице сайта, на странице выбранной группы,
-        в профайле пользователя.
-        Этот пост не попал в группу, для которой не был предназначен.
+        Проверка вывода поста в группе на главную страницу.
         """
-        last_post = ViewTests.posts[-1]
-
-        response_index = self.client.get(reverse(f"{APP_NAME}:index"))
-        items_index = response_index.context.get("page_obj")
+        response = self.client.get(reverse(f"{APP_NAME}:index"))
+        items = response.context.get("page_obj")
 
         with self.subTest("Пост на главной странице"):
-            self.assertIn(last_post, items_index)
+            self.assertIn(ViewTests.post_last, items)
 
-        response_group = self.client.get(
+    def entities_creation_post_group(self):
+        """
+        Проверка вывода поста в группе на страницу группы.
+        """
+        response = self.client.get(
             reverse(f"{APP_NAME}:group_list", kwargs={"slug": "test"})
         )
-        items_group = response_group.context.get("page_obj")
+        items = response.context.get("page_obj")
 
         with self.subTest("Пост в своей группе"):
-            self.assertIn(last_post, items_group)
+            self.assertIn(ViewTests.post_last, items)
 
-        response_profile = self.client.get(
-            reverse(
-                f"{APP_NAME}:profile",
-                kwargs={"username": last_post.author.username},
-            )
-        )
-        items_profile = response_profile.context.get("page_obj")
-
-        with self.subTest("Пост в профиле автора"):
-            self.assertIn(last_post, items_profile)
-
-        response_group_another = self.client.get(
+    def entities_creation_post_group_another(self):
+        """
+        Проверка вывода поста в группе на страницу чужой группы.
+        """
+        response = self.client.get(
             reverse(f"{APP_NAME}:group_list", kwargs={"slug": "test-another"})
         )
-        items_group_another = response_group_another.context.get("page_obj")
+        items = response.context.get("page_obj")
 
         with self.subTest("Пост в не связанной группе"):
-            self.assertNotIn(last_post, items_group_another)
+            self.assertNotIn(ViewTests.post_last, items)
 
-        response_detail = self.client.get(
+    def entities_creation_post_profile(self):
+        """
+        Проверка вывода поста в группе на страницу профиля автора.
+        """
+        response = self.client.get(
             reverse(
-                f"{APP_NAME}:post_detail",
-                kwargs={"pk": last_post.id},
+                f"{APP_NAME}:profile",
+                kwargs={"username": ViewTests.post_last.author.username},
             )
         )
-        item_detail = response_detail.context.get("post")
+        items = response.context.get("page_obj")
+
+        with self.subTest("Пост в профиле автора"):
+            self.assertIn(ViewTests.post_last, items)
+
+    def entities_creation_post_detail(self):
+        """
+        Проверка вывода поста в группе на детальную страницу поста.
+        """
+        response = self.client.get(
+            reverse(
+                f"{APP_NAME}:post_detail",
+                kwargs={"pk": ViewTests.post_last.id},
+            )
+        )
+        item = response.context.get("post")
 
         with self.subTest("Пост на детальной странице"):
-            self.assertEqual(last_post, item_detail)
+            self.assertEqual(ViewTests.post_last, item)
+
+    def entities_creation_comment_post(self):
+        """
+        Проверка вывода комментария на детальную страницу поста.
+        """
+        response = self.client.get(
+            reverse(
+                f"{APP_NAME}:post_detail",
+                kwargs={"pk": ViewTests.post.id},
+            )
+        )
+        items = response.context.get("page_obj")
+        comment_last = ViewTests.post.comments.latest("id")
+
+        with self.subTest("Комментарий на детальной странице своего поста"):
+            self.assertIn(comment_last, items)
+
+    def entities_creation_comment_post_another(self):
+        """
+        Проверка вывода комментария на детальную страницу другого поста.
+        """
+        response = self.client.get(
+            reverse(
+                f"{APP_NAME}:post_detail",
+                kwargs={"pk": ViewTests.post_last.id},
+            )
+        )
+        items = response.context.get("page_obj")
+        comment_last = ViewTests.post.comments.latest("id")
+
+        with self.subTest("Комментарий на детальной странице другого поста"):
+            self.assertNotIn(comment_last, items)
+
+    def test_entities_creation(self):
+        """
+        Проверка создания поста и комментария.
+        """
+        self.entities_creation_post_index()
+        self.entities_creation_post_group()
+        self.entities_creation_post_group_another()
+        self.entities_creation_post_profile()
+        self.entities_creation_post_detail()
+
+        self.entities_creation_comment_post()
+        self.entities_creation_comment_post_another()

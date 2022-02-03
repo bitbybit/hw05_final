@@ -22,7 +22,10 @@ URLS_GUEST_ALLOWED = {
 URLS_USER_ALLOWED = {
     "/create/": {
         "template": "posts/create_post.html",
-    }
+    },
+    "/posts/1/comment/": {
+        "template": "posts/post_detail.html",
+    },
 }
 
 URLS_AUTHOR_ALLOWED = {
