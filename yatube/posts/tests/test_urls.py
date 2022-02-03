@@ -36,7 +36,7 @@ URLS_AUTHOR_ALLOWED = {
 }
 
 URLS_NOT_EXISTING = {
-    "/unexisting_page/": None,
+    "/unexisting_page/": {"template": "core/404.html"},
 }
 
 
@@ -97,12 +97,13 @@ class URLTests(TestCase):
     def test_pages_http_code_and_template(self):
         """
         Проверка ожидаемого кода ответа страниц и соответствия шаблона.
-        (только для кода ответа 200)
+        (для кодов ответа 200 и 404)
         """
         for user_type, urls in self.urls_dict.items():
             for http_code_expected, urls_data in urls.items():
                 is_redirect = http_code_expected == HTTPStatus.FOUND
                 is_ok = http_code_expected == HTTPStatus.OK
+                is_not_found = http_code_expected == HTTPStatus.NOT_FOUND
 
                 for url, value_expected in urls_data.items():
                     response = getattr(self, f"{user_type}_client").get(
@@ -123,7 +124,7 @@ class URLTests(TestCase):
                                 response.status_code, http_code_expected
                             )
 
-                    if is_ok:
+                    if is_ok or is_not_found:
                         with self.subTest(
                             f"{user_type} http_response "
                             f"{value_expected['template']}"
