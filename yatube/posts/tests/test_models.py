@@ -7,9 +7,9 @@ FIELDS_POST = {
         "verbose_name": "Текст поста",
         "help_text": "Введите текст поста",
     },
-    "pub_date": {
-        "verbose_name": "Дата публикации",
-        "help_text": "Выберите дату публикации",
+    "created": {
+        "verbose_name": "Дата создания",
+        "help_text": "Выберите дату",
     },
     "author": {
         "verbose_name": "Автор",
@@ -29,6 +29,25 @@ FIELDS_GROUP = {
     "slug": {
         "verbose_name": "Адрес страницы",
         "help_text": "Введите адрес страницы",
+    },
+}
+
+FIELDS_COMMENT = {
+    "created": {
+        "verbose_name": "Дата создания",
+        "help_text": "Выберите дату",
+    },
+    "post": {
+        "verbose_name": "Пост",
+        "help_text": "Пост, к которому относится комментарий",
+    },
+    "author": {
+        "verbose_name": "Автор",
+        "help_text": "Автор комментария",
+    },
+    "text": {
+        "verbose_name": "Текст комментария",
+        "help_text": "Введите текст комментария",
     },
 }
 
