@@ -6,19 +6,13 @@ from . import views
 app_name = "posts"
 
 urlpatterns = [
-    path("group/<slug:slug>/", views.group_posts, name="group_list"),
-    path("", views.index, name="index"),
-    path("profile/<str:username>/", views.profile, name="profile"),
+    path("group/<slug:slug>/", views.GroupPosts.as_view(), name="group_list"),
+    path("", views.Index.as_view(), name="index"),
+    path("profile/<str:username>/", views.Profile.as_view(), name="profile"),
     path("posts/<int:pk>/", views.PostDetail.as_view(), name="post_detail"),
+    path("create/", views.PostCreate.as_view(), name="post_create"),
     path(
-        "create/",
-        login_required(views.PostCreate.as_view()),
-        name="post_create",
-    ),
-    path(
-        "posts/<int:pk>/edit/",
-        views.PostUpdate.as_view(),
-        name="post_update",
+        "posts/<int:pk>/edit/", views.PostUpdate.as_view(), name="post_update"
     ),
     path(
         "posts/<int:pk>/comment/",
