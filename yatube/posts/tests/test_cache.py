@@ -15,26 +15,38 @@ class CacheTests(TestCase):
 
         cls.user = User.objects.create(username="test")
 
-        for i in range(5):
-            Post.objects.create(
-                text="Текст",
-                author=cls.user,
-            )
+        Post.objects.create(
+            text="Закешированный текст",
+            author=cls.user,
+        )
+
+        cache.clear()
 
     def setUp(self):
         self.client = Client()
 
     def cache_post_index(self):
         """Проверка кэширования списка постов главной страницы."""
-        self.client.get(reverse(f"{APP_NAME}:index"))
-
+        post = Post.objects.latest("id")
+        post_text = str.encode(post.text)
         cache_key = make_template_fragment_key("index_page", [1])
-        cached_fragment = cache.get(cache_key)
 
-        with self.subTest(
-            "Кеш фрагмента шаблона постов главной страницы создан"
-        ):
-            self.assertIsNotNone(cached_fragment)
+        with self.subTest("Текст поста на странице"):
+            response = self.client.get(reverse(f"{APP_NAME}:index"))
+            self.assertIn(post_text, response.content)
+
+        with self.subTest("Кеш создан"):
+            self.assertIsNotNone(cache.get(cache_key))
+
+        with self.subTest("Текст поста на странице после удаления поста"):
+            post.delete()
+            response = self.client.get(reverse(f"{APP_NAME}:index"))
+            self.assertIn(post_text, response.content)
+
+        with self.subTest("Текста поста нет на странице после очистки кеша"):
+            cache.delete(cache_key)
+            response = self.client.get(reverse(f"{APP_NAME}:index"))
+            self.assertNotIn(post_text, response.content)
 
     def test_cache(self):
         """Проверка кэширования."""
