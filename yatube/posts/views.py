@@ -2,6 +2,7 @@ from core.helpers import clean_int
 from core.views import permission_denied
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
+from django.db import IntegrityError
 from django.http import HttpRequest
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
@@ -215,10 +216,13 @@ class ProfileFollow(LoginRequiredMixin, View):
         author = get_object_or_404(User, username=kwargs["username"])
 
         if request.user.id != author.id:
-            Follow.objects.create(
-                user=request.user,
-                author=author,
-            )
+            try:
+                Follow.objects.create(
+                    user=request.user,
+                    author=author,
+                )
+            except IntegrityError:
+                pass
 
         return redirect(
             "posts:profile",
