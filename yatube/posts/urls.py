@@ -19,4 +19,15 @@ urlpatterns = [
         login_required(views.PostDetail.as_view()),
         name="add_comment",
     ),
+    path("follow/", views.IndexFollow.as_view(), name="follow_index"),
+    path(
+        "profile/<str:username>/follow/",
+        views.ProfileFollow.as_view(),
+        name="profile_follow",
+    ),
+    path(
+        "profile/<str:username>/unfollow/",
+        views.ProfileUnfollow.as_view(),
+        name="profile_unfollow",
+    ),
 ]

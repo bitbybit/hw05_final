@@ -81,3 +81,29 @@ class Comment(CreatedModel):
         ordering = ["-created"]
         verbose_name = "Комментарий"
         verbose_name_plural = "Комментарии"
+
+
+class Follow(models.Model):
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="follower",
+        verbose_name="Подписчик",
+        help_text="Подписавшийся пользователь",
+    )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="following",
+        verbose_name="Издатель",
+        help_text="Пользователь, на которого подписались",
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "author"], name="unique subscription"
+            )
+        ]
+        verbose_name = "Подписка"
+        verbose_name_plural = "Подписки"

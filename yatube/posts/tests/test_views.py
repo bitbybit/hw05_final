@@ -11,7 +11,7 @@ from django.test import Client, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
-from ..models import Comment, Group, Post, User
+from ..models import Comment, Follow, Group, Post, User
 
 APP_NAME = "posts"
 
@@ -77,6 +77,13 @@ class ViewTests(TestCase):
                 author=cls.user,
             )
 
+        cls.user_follower = User.objects.create(username="test_follower")
+
+        Follow.objects.create(
+            user=cls.user_follower,
+            author=cls.user,
+        )
+
         cls.set_views_dict(cls)
 
     @classmethod
@@ -87,6 +94,9 @@ class ViewTests(TestCase):
     def setUp(self):
         self.client = Client()
         self.client.force_login(ViewTests.user)
+
+        self.client_follower = Client()
+        self.client_follower.force_login(ViewTests.user_follower)
 
     def set_views_dict(self):
         """
@@ -417,6 +427,28 @@ class ViewTests(TestCase):
         with self.subTest("Комментарий на детальной странице другого поста"):
             self.assertNotIn(comment_last, items)
 
+    def entities_creation_profile_follow(self):
+        """
+        Проверка вывода поста на страницу подписок если подписан.
+        """
+        response = self.client_follower.get(
+            reverse(f"{APP_NAME}:follow_index")
+        )
+        items = response.context.get("page_obj")
+
+        with self.subTest("Пост на странице подписок подписанного"):
+            self.assertIn(ViewTests.post_last, items)
+
+    def entities_creation_profile_follow_another(self):
+        """
+        Проверка вывода поста на страницу подписок если не подписан.
+        """
+        response = self.client.get(reverse(f"{APP_NAME}:follow_index"))
+        items = response.context.get("page_obj")
+
+        with self.subTest("Поста нет на странице подписок не подписанного"):
+            self.assertNotIn(ViewTests.post_last, items)
+
     def test_entities_creation(self):
         """
         Проверка создания поста и комментария.
@@ -429,3 +461,6 @@ class ViewTests(TestCase):
 
         self.entities_creation_comment_post()
         self.entities_creation_comment_post_another()
+
+        self.entities_creation_profile_follow()
+        self.entities_creation_profile_follow_another()

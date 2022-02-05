@@ -1,16 +1,14 @@
+from core.helpers import clean_int
 from core.views import permission_denied
-from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.paginator import Paginator
 from django.http import HttpRequest
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
-from django.views.generic import CreateView, TemplateView, UpdateView
+from django.views.generic import CreateView, TemplateView, UpdateView, View
 
 from .forms import CommentForm, PostForm
-from .models import Group, Post
-
-User = get_user_model()
+from .models import Follow, Group, Post, User
 
 POSTS_LIMIT = 10
 COMMENTS_LIMIT = 10
@@ -24,9 +22,9 @@ class Index(TemplateView):
         posts = Post.objects.all()
 
         paginator = Paginator(posts, POSTS_LIMIT)
-        page_number = self.request.GET.get("page")
+        page_number = clean_int(self.request.GET.get("page"))
 
-        cache_id = f"{page_number or 1}"
+        cache_id = page_number or 1
 
         context = super().get_context_data(**kwargs)
         context["title"] = "Последние обновления на сайте"
@@ -44,7 +42,7 @@ class GroupPosts(TemplateView):
         posts = group.posts.all()
 
         paginator = Paginator(posts, POSTS_LIMIT)
-        page_number = self.request.GET.get("page")
+        page_number = clean_int(self.request.GET.get("page"))
 
         cache_id = f"{group.id}-{page_number or 1}"
 
@@ -68,15 +66,25 @@ class Profile(TemplateView):
         )
 
         paginator = Paginator(posts, POSTS_LIMIT)
-        page_number = self.request.GET.get("page")
+        page_number = clean_int(self.request.GET.get("page"))
 
         cache_id = f"{author.id}-{page_number or 1}"
+
+        following = None
+        try:
+            if self.request.user.is_authenticated:
+                following = Follow.objects.get(
+                    user=self.request.user, author=author
+                )
+        except Follow.DoesNotExist:
+            pass
 
         context = super().get_context_data(**kwargs)
         context["title"] = title
         context["author"] = author
         context["page_obj"] = paginator.get_page(page_number)
         context["cache_id"] = cache_id
+        context["following"] = following
 
         return context
 
@@ -95,7 +103,7 @@ class PostDetail(CreateView):
         comments = self.post_object.comments.all()
 
         paginator = Paginator(comments, COMMENTS_LIMIT)
-        page_number = self.request.GET.get("page")
+        page_number = clean_int(self.request.GET.get("page"))
 
         context = super().get_context_data(**kwargs)
         context[
@@ -175,4 +183,59 @@ class PostUpdate(LoginRequiredMixin, UpdateView):
         return reverse_lazy(
             "posts:post_update",
             kwargs={"pk": self.object.id},
+        )
+
+
+class IndexFollow(LoginRequiredMixin, TemplateView):
+    template_name = "posts/follow.html"
+
+    def get_context_data(self, **kwargs):
+        posts = Post.objects.filter(
+            author__following__in=self.request.user.follower.all()
+        )
+
+        paginator = Paginator(posts, POSTS_LIMIT)
+        page_number = clean_int(self.request.GET.get("page"))
+
+        cache_id = page_number or 1
+
+        context = super().get_context_data(**kwargs)
+        context["title"] = "Подписки"
+        context["page_obj"] = paginator.get_page(page_number)
+        context["cache_id"] = cache_id
+
+        return context
+
+
+class ProfileFollow(LoginRequiredMixin, View):
+    def dispatch(self, request: HttpRequest, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
+
+        author = get_object_or_404(User, username=kwargs["username"])
+
+        Follow.objects.create(
+            user=request.user,
+            author=author,
+        )
+
+        return redirect(
+            "posts:profile",
+            username=kwargs["username"],
+        )
+
+
+class ProfileUnfollow(LoginRequiredMixin, View):
+    def dispatch(self, request: HttpRequest, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
+
+        author = get_object_or_404(User, username=kwargs["username"])
+        following = get_object_or_404(Follow, user=request.user, author=author)
+
+        following.delete()
+
+        return redirect(
+            "posts:profile",
+            username=kwargs["username"],
         )

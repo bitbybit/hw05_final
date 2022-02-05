@@ -5,9 +5,29 @@
 {% block header %}Все посты пользователя {{ author.get_full_name }}{% endblock %}
 
 {% block content %}
-  {% cache 20 profile_page cache_id %}
-    <h3 class="mb-4">Всего постов: {{ page_obj.paginator.count }}</h3>
+  <h3 class="mb-4">Всего постов: {{ page_obj.paginator.count }}</h3>
 
+  {% if user.is_authenticated %}
+    <div class="mb-5">
+      {% if following %}
+        <a
+          class="btn btn-lg btn-light"
+          href="{% url 'posts:profile_unfollow' author.username %}" role="button"
+        >
+          Отписаться
+        </a>
+      {% else %}
+        <a
+          class="btn btn-lg btn-primary"
+          href="{% url 'posts:profile_follow' author.username %}" role="button"
+        >
+          Подписаться
+        </a>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  {% cache 20 profile_page cache_id %}
     {% for post in page_obj %}
       {% with post=post %}
         {% include 'posts/includes/post_list.html' %}

@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% load cache %}
+
+{% block header %}Подписки{% endblock %}
+
+{% block content %}
+  {% include 'posts/includes/switcher.html' %}
+
+  {% cache 20 follow_page cache_id %}
+    {% if page_obj %}
+      {% for post in page_obj %}
+        {% with post=post %}
+          {% include 'posts/includes/post_list.html' %}
+        {% endwith %}
+
+        {% if not forloop.last %}
+          <hr>
+        {% endif %}
+      {% endfor %}
+
+      {% include 'posts/includes/paginator.html' %}
+    {% else %}
+      Нет подписок
+    {% endif %}
+  {% endcache %}
+{% endblock %}

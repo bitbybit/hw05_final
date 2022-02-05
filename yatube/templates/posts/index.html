@@ -5,6 +5,8 @@
 {% block header %}{{ title }}{% endblock %}
 
 {% block content %}
+  {% include 'posts/includes/switcher.html' %}
+
   {% cache 20 index_page cache_id %}
     {% for post in page_obj %}
       {% with post=post %}
