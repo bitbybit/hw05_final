@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% load cache %}
+
+{% block header %}{{ group }}{% endblock %}
+
+{% block content %}
+  <p>
+    {{ group.description }}
+  </p>
+
+  {% cache 20 group_list_page cache_id %}
+    {% for post in page_obj %}
+      {% with post=post %}
+        {% include 'posts/includes/post_list.html' %}
+      {% endwith %}
+
+      {% if not forloop.last %}
+        <hr>
+      {% endif %}
+    {% endfor %}
+
+    {% include 'posts/includes/paginator.html' %}
+  {% endcache %}
+{% endblock %}
