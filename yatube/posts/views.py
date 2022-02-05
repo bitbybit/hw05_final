@@ -214,10 +214,11 @@ class ProfileFollow(LoginRequiredMixin, View):
 
         author = get_object_or_404(User, username=kwargs["username"])
 
-        Follow.objects.create(
-            user=request.user,
-            author=author,
-        )
+        if request.user.id != author.id:
+            Follow.objects.create(
+                user=request.user,
+                author=author,
+            )
 
         return redirect(
             "posts:profile",

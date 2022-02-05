@@ -44,14 +44,10 @@ URLS_NOT_EXISTING: typing_urls = {
 
 URLS_GUEST_SUBSCRIPTIONS: typing_urls = {
     "/profile/test/follow/": {},
-    "/profile/test/unfollow/": {},
 }
 
 URLS_USER_SUBSCRIPTIONS: typing_urls = {
     "/profile/test/follow/": {
-        "url_redirect": "/profile/test/",
-    },
-    "/profile/test/unfollow/": {
         "url_redirect": "/profile/test/",
     },
 }
