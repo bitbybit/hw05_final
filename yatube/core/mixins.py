@@ -100,6 +100,9 @@ class TestViewsMixin:
         - любому доп. условию для элемента списка паджинации (если задано)
         - контекстным переменным из `views_dict`
         """
+        if not hasattr(self, "views_dict"):
+            return
+
         for path_name, view_expected in self.views_dict.items():
             response = self.client.get(path_name)
 
@@ -155,6 +158,9 @@ class TestURLsMixin:
         Проверка ожидаемого кода ответа страниц и соответствия шаблона.
         (для кодов ответа 200 и 404)
         """
+        if not hasattr(self, "urls_dict"):
+            return
+
         for user_type, urls in self.urls_dict.items():
             for http_code_expected, urls_data in urls.items():
                 is_redirect = self.is_redirect(http_code_expected)
