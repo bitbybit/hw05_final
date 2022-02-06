@@ -26,6 +26,19 @@ class FormTests(TestCase):
             author=cls.user,
         )
 
+        cls.post_image_text = "Текст с картинкой"
+        cls.post_image_small_gif = (
+            b"\x47\x49\x46\x38\x39\x61\x02\x00"
+            b"\x01\x00\x80\x00\x00\x00\x00\x00"
+            b"\xFF\xFF\xFF\x21\xF9\x04\x00\x00"
+            b"\x00\x00\x00\x2C\x00\x00\x00\x00"
+            b"\x02\x00\x01\x00\x00\x02\x02\x0C"
+            b"\x0A\x00\x3B"
+        )
+
+        cls.comment_text = "Комментарий"
+        cls.comment_text_modified = "Текст измененный"
+
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
@@ -38,25 +51,16 @@ class FormTests(TestCase):
     def entities_creation_post(self):
         count = Post.objects.count()
 
-        text = "Текст с картинкой"
-
-        small_gif = (
-            b"\x47\x49\x46\x38\x39\x61\x02\x00"
-            b"\x01\x00\x80\x00\x00\x00\x00\x00"
-            b"\xFF\xFF\xFF\x21\xF9\x04\x00\x00"
-            b"\x00\x00\x00\x2C\x00\x00\x00\x00"
-            b"\x02\x00\x01\x00\x00\x02\x02\x0C"
-            b"\x0A\x00\x3B"
-        )
-
         image = SimpleUploadedFile(
-            name="small.gif", content=small_gif, content_type="image/gif"
+            name="small.gif",
+            content=FormTests.post_image_small_gif,
+            content_type="image/gif",
         )
 
         response = self.client.post(
             reverse(f"{APP_NAME}:post_create"),
             data={
-                "text": text,
+                "text": FormTests.post_image_text,
                 "image": image,
             },
             follow=True,
@@ -68,21 +72,20 @@ class FormTests(TestCase):
 
         self.assertTrue(
             Post.objects.filter(
-                text=text, image=f"{APP_NAME}/{image.name}"
+                text=FormTests.post_image_text,
+                image=f"{APP_NAME}/{image.name}",
             ).exists()
         )
 
     def entities_creation_comment(self):
         count = Comment.objects.count()
 
-        text = "Комментарий"
-
         response = self.client.post(
             reverse(
                 f"{APP_NAME}:add_comment", kwargs={"pk": FormTests.post.id}
             ),
             data={
-                "text": text,
+                "text": FormTests.comment_text,
             },
             follow=True,
         )
@@ -91,7 +94,9 @@ class FormTests(TestCase):
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
-        self.assertTrue(Comment.objects.filter(text=text).exists())
+        self.assertTrue(
+            Comment.objects.filter(text=FormTests.comment_text).exists()
+        )
 
     def test_entities_creation(self):
         """
@@ -101,19 +106,20 @@ class FormTests(TestCase):
         self.entities_creation_comment()
 
     def entities_modification_post(self):
-        text_new = "Текст измененный"
-
         response = self.client.post(
             reverse(
                 f"{APP_NAME}:post_update", kwargs={"pk": FormTests.post.id}
             ),
             data={
-                "text": text_new,
+                "text": FormTests.comment_text_modified,
             },
             follow=True,
         )
 
-        self.assertEqual(Post.objects.get(pk=FormTests.post.id).text, text_new)
+        self.assertEqual(
+            Post.objects.get(pk=FormTests.post.id).text,
+            FormTests.comment_text_modified,
+        )
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
